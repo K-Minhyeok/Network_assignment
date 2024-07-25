@@ -99,9 +99,6 @@ int main(int argc, char *argv[])
         else
         {
             printf("- Not Received : \n");
-            pack_send.ack = pack_recv.p_seq - 1;    //그 다음 거 줘도 된다고 알려줌
-            sendto(serv_sock, &pack_send, sizeof(Packet_info), 0,
-                   (struct sockaddr *)&clnt_adr, clnt_adr_sz);
             
         }
     }

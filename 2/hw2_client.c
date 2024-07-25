@@ -61,8 +61,8 @@ int main(int argc, char *argv[])
 
     
 
-    fp = fopen("abc", "rb");     // 현재 이 파일을 열고, 이 파일을 여는 pointer 값을 return한다.
-    fp_tmp = fopen("abc", "rb"); // 현재 이 파일을 열고, 이 파일을 여는 pointer 값을 return한다.
+    fp = fopen("hello", "rb");     
+    fp_tmp = fopen("hello", "rb"); // 현재 이 파일을 열고, 이 파일을 여는 pointer 값을 return한다.
 
     fseek(fp_tmp, 0, SEEK_END);
     size = ftell(fp_tmp);
@@ -80,17 +80,19 @@ int main(int argc, char *argv[])
 
         read_cnt = fread((void *)message, 1, BUF_SIZE, fp);
         strcpy(pack_send.content,message);
-        printf("%s ==\n",pack_send.content);
         sendto(sock, &pack_send, sizeof(Packet_info), 0,
                (struct sockaddr *)&serv_adr, sizeof(serv_adr));
         }
+         if(ack_check==0)
+             sendto(sock, &pack_send, sizeof(Packet_info), 0,
+               (struct sockaddr *)&serv_adr, sizeof(serv_adr));
     
         adr_sz = sizeof(serv_adr);
         
         rec_len = recvfrom(sock, &pack_recv, sizeof(Packet_info), 0,
                            (struct sockaddr *)&serv_adr, &adr_sz);
-        if(ack_check==0)
-        printf("*");
+       
+        
         if(pack_recv.type == 999)break;
      
         if( rec_len >0 && pack_recv.p_seq==0 && pack_recv.ack==pack_id+1){
