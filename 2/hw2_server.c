@@ -7,7 +7,7 @@
 #include <sys/time.h>
 
 
-#define BUF_SIZE 30
+#define BUF_SIZE 4096
 
 typedef struct Packet_info
 {
@@ -15,6 +15,8 @@ typedef struct Packet_info
     int p_seq;
     int ack;
     int type;
+    int read_size;
+
 } Packet_info;
 
 void error_handling(char *message);
@@ -59,10 +61,10 @@ int main(int argc, char *argv[])
     if (bind(serv_sock, (struct sockaddr *)&serv_adr, sizeof(serv_adr)) == -1)
         error_handling("bind() error");
 
-    fp = fopen("whtasf", "wb"); // 현재 이 파일을 열고, 이 파일을 여는 pointer 값을 return한다.
+    fp = fopen("whtasf2.jpg", "wb"); // 현재 이 파일을 열고, 이 파일을 여는 pointer 값을 return한다.
 
     clnt_adr_sz = sizeof(clnt_adr);
-    recvfrom(serv_sock, &size, sizeof(unsigned), 0,
+    recvfrom(serv_sock, &size, sizeof(unsigned int), 0,
              (struct sockaddr *)&clnt_adr, &clnt_adr_sz);   //얼마만큼 크기의 파일을 받는지에 대한 정보.
     printf("size %d \n", size);
 
@@ -83,25 +85,21 @@ int main(int argc, char *argv[])
             pack_send.ack = pack_recv.p_seq + 1;    //그 다음 거 줘도 된다고 알려줌
             sendto(serv_sock, &pack_send, sizeof(Packet_info), 0,
                    (struct sockaddr *)&clnt_adr, clnt_adr_sz);
-
-            if (write_cnt + BUF_SIZE >= size)
+            if (write_cnt + pack_recv.read_size >= size)
             {
                 int last = fwrite((void *)pack_recv.content, 1, size - write_cnt, fp); // 그 내용을 쓴다.
                 write_cnt += last;
                 break;
             }
-            fwrite((void *)pack_recv.content, 1, strlen(pack_recv.content), fp); // 그 내용을 쓴다.
-
-            write_cnt += strlen(pack_recv.content);
+            int write_size = fwrite((void *)pack_recv.content, 1, pack_recv.read_size, fp); // 그 내용을 쓴다.
+        
+            write_cnt += pack_recv.read_size;
             pack_id++;
 
         }
         else
         {
             printf("- Not Received : \n");
-            pack_send.ack = pack_recv.p_seq - 1;    //그 다음 거 줘도 된다고 알려줌
-            sendto(serv_sock, &pack_send, sizeof(Packet_info), 0,
-                   (struct sockaddr *)&clnt_adr, clnt_adr_sz);
             
         }
     }
