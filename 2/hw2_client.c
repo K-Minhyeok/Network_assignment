@@ -7,7 +7,7 @@
 #include <sys/time.h>
 #include <time.h>
 
-#define BUF_SIZE 30
+#define BUF_SIZE 4096
 
 typedef struct Packet_info
 {
@@ -15,6 +15,7 @@ typedef struct Packet_info
     int p_seq;
     int ack;
     int type;
+    int read_size;
 } Packet_info;
 
 void error_handling(char *message);
@@ -47,7 +48,7 @@ int main(int argc, char *argv[])
 
     struct timeval time;
     time.tv_sec = 0;
-    time.tv_usec = 500000;
+    time.tv_usec = 50000;
     sock = socket(PF_INET, SOCK_DGRAM, 0);
     setsockopt(sock,SOL_SOCKET,SO_RCVTIMEO,(char *)&time, sizeof(time));
     if (sock == -1)
@@ -61,25 +62,27 @@ int main(int argc, char *argv[])
 
     
 
-    fp = fopen("hello", "rb");     
-    fp_tmp = fopen("hello", "rb"); // 현재 이 파일을 열고, 이 파일을 여는 pointer 값을 return한다.
+    fp = fopen("this.jpg", "rb");     
+    fp_tmp = fopen("this.jpg", "rb"); // 현재 이 파일을 열고, 이 파일을 여는 pointer 값을 return한다.
 
     fseek(fp_tmp, 0, SEEK_END);
     size = ftell(fp_tmp);
-    sendto(sock, &size, sizeof(int), 0,
+    fclose(fp_tmp);
+    sendto(sock, &size, sizeof(unsigned int), 0,
                (struct sockaddr *)&serv_adr, sizeof(serv_adr));
+
+    fseek(fp, 0, SEEK_SET);
 
     clock_t start = clock();
     while (1)
     {
-
         if(ack_check==1){
         pack_send.p_seq = pack_id;
         pack_send.ack = 0;
         pack_send.type = 1;
 
-        read_cnt = fread((void *)message, 1, BUF_SIZE, fp);
-        strcpy(pack_send.content,message);
+        read_cnt = fread(pack_send.content, 1, BUF_SIZE, fp);
+        pack_send.read_size = read_cnt;
         sendto(sock, &pack_send, sizeof(Packet_info), 0,
                (struct sockaddr *)&serv_adr, sizeof(serv_adr));
         }
@@ -103,9 +106,7 @@ int main(int argc, char *argv[])
         }else{
             printf("- not recieved\n");
             ack_check = 0;
-            printf("받 %d  \n" ,pack_recv.ack);
-            printf("필 %d  \n" ,pack_id);
-            printf("seq %d  \n" ,pack_recv.p_seq);
+
             printf("len %d  \n" ,rec_len);
 
 
@@ -114,11 +115,12 @@ int main(int argc, char *argv[])
 
     }
     close(sock);
+    fclose(fp);
     printf("\n통신이 끝났습니다.");
     clock_t end = clock();
     double spent = end - start;
 
-    printf("소요 시간 : 0.%lf\n",spent);
+    printf("소요 시간 : %lf\n",(spent/1000));
     printf("파일 사이즈 : %d", size);
     return 0;
 }
