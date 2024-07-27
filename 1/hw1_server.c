@@ -93,17 +93,15 @@ int main(int argc, char *argv[])
     while (1)
     {
 
-        printf("hit");
         int tmp;
         if (read(clnt_sock, &tmp, sizeof(tmp)) == -1)
         {
             error_handling("index error");
         }
-        idx = tmp;
-        printf("index = %d \n", idx);
+        
 
-        // 파일 이름[idx]로 file 찾기
-        printf("파일은 %s\n", files_list[idx].file_name);
+        idx = tmp;
+       
         char path_tmp[PATH_MAX];
         strcpy(path_tmp, path);
         strcat(path_tmp, "/");
@@ -125,7 +123,6 @@ int main(int argc, char *argv[])
             write(clnt_sock, buf, BUF_SIZE); // 그게 아니면 버퍼 크기만큼만 적는다.
         }
         fclose(fp);
-        printf("saved\n");
     }
     return 0;
 }
