@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 				else // read message!
 					 // = client에서 이벤트가 생겼다. ##를 해줘라고 옴
 				{
-					printf("Connected client IP: %s \n", inet_ntoa(clnt_adr.sin_addr));
+					printf("hello Connected client IP: %s \n", inet_ntoa(clnt_adr.sin_addr));
 					pthread_create(&t_id, NULL, handle_clnt, (void *)&clnt_sock);
 					pthread_detach(t_id);
 				}
@@ -147,11 +147,16 @@ void change_dir(Client_info info, char param_in[MAX_DIR_LEN])
 
 	int param_len = strlen(param_in);
 
+	if(strcmp(param_in,"..")==0){
+
+	}
+	else{
+
 	// 어디로 갈건지
 	strncat(client[sock].dir, param_in, param_len);
-		strcat(client[sock].dir, "/");
+	strcat(client[sock].dir, "/");
 
-	printf("dir 주소는 %s",client[sock].dir);
+	printf("dir 주소는 %s", client[sock].dir);
 
 	// 2.그 나머지에 해당하는 문자열 -> dir open.
 	DIR *dp;
@@ -181,7 +186,6 @@ void change_dir(Client_info info, char param_in[MAX_DIR_LEN])
 		unsigned int file_name_size = sizeof(files_list[num_file].file_name);
 		files_list[num_file].file_name[file_name_size - 1] = '\0';
 
-
 		snprintf(full_path, sizeof(full_path), "%s/%s", client[sock].dir, entry->d_name);
 
 		fp = fopen(full_path, "rb");
@@ -197,30 +201,48 @@ void change_dir(Client_info info, char param_in[MAX_DIR_LEN])
 			files_list[num_file].size = ftell(fp_tmp);
 			fclose(fp_tmp);
 		}
+	}
 
 		num_file++;
-
+		printf("moved\n");
 	}
 
 
 	// 4.해당 clnt의 구조체 업데이트
 	strcpy(client[sock].last_dir, param_in);
 
-// 	// 5.읽은 값을 연결된 socket에 send
-// 	write(sock, &num_file, sizeof(num_file));
 
-// 	for (int i = 0; i < num_file; i++)
-// 		write(sock, &files_list[i], sizeof(File_info));
+
+	printf("finished\n");
 }
 
 void upload_file(Client_info info, char param_in[MAX_DIR_LEN])
 { // 현재 client에 해당하는 구조체 가져오기
-	printf("upload \n");
+	printf("hit \n");
 	int sock = info.sockfd;
+
+	DIR *dp;
+
+	char tmp_dir[MAX_DIR_LEN];
+	int param_len = strlen(param_in);
+
+	strcpy(tmp_dir, client[sock].dir);
+	printf("hit 1\n");
+
+	strncat(tmp_dir, param_in, param_len);
+	printf("hit 2\n");
+
+	if ((dp = opendir(client[sock].dir)) == NULL)
+	{
+		error_handling("Wrong path Entered");
+	}
 
 	// 1. 현재 dir에 받는 파일 이름으로 fopen
 	FILE *fp;
-	fp = fopen(param_in, "wb");
+
+	fp = fopen(tmp_dir, "wb");
+		printf("hit 4\n");
+
 	char message[BUF_SIZE];
 	int read_cnt;
 	unsigned int size;
@@ -241,6 +263,8 @@ void upload_file(Client_info info, char param_in[MAX_DIR_LEN])
 	}
 	puts("\nReceived file data");
 	fclose(fp);
+		printf("finished\n");
+
 }
 
 void download_file(Client_info info, char param_in[MAX_DIR_LEN])
@@ -284,18 +308,16 @@ void download_file(Client_info info, char param_in[MAX_DIR_LEN])
 	// server : write , client : read
 }
 
-
-
-void list_up(Client_info info){
+void list_up(Client_info info)
+{
 
 	int sock = info.sockfd;
 	File_info files_list[MAX_FILE_NUM];
 	struct dirent *entry = NULL; // 현재 작업 주소에 있는 자료들
 
-
 	// 어디로 갈건지
 
-	printf("ls dir 주소는 %s\n",client[sock].dir);
+	printf("ls dir 주소는 %s\n", client[sock].dir);
 
 	// 2.그 나머지에 해당하는 문자열 -> dir open.
 	DIR *dp;
@@ -325,7 +347,6 @@ void list_up(Client_info info){
 		unsigned int file_name_size = sizeof(files_list[num_file].file_name);
 		files_list[num_file].file_name[file_name_size - 1] = '\0';
 
-
 		snprintf(full_path, sizeof(full_path), "%s/%s", client[sock].dir, entry->d_name);
 
 		fp = fopen(full_path, "rb");
@@ -343,15 +364,15 @@ void list_up(Client_info info){
 		}
 
 		num_file++;
-
 	}
 	write(sock, &num_file, sizeof(num_file));
 
 	for (int i = 0; i < num_file; i++)
 		write(sock, &files_list[i], sizeof(File_info));
 
-}
+			printf("finished\n");
 
+}
 
 void *handle_clnt(void *arg)
 {

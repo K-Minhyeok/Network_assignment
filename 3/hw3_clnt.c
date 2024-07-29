@@ -68,23 +68,25 @@ int main(int argc, char *argv[])
 		fputs("Input message(Q to quit): ", stdout);
 
     printf("Enter command: ");
-     fgets(input, 256, stdin);
-
+	printf("Enter command: ");
+    if (fgets(input, sizeof(input), stdin) == NULL) {
+			error_handling("input error");
+    }
     input[strcspn(input, "\n")] = '\0';
 
-    char *token = strtok(input, " ");
+	char *token = strtok(input, " ");
     if (token != NULL) {
-        strncpy(com.command, token, MAX_CMD_LEN - 1);
-        com.command[MAX_CMD_LEN -1] = '\0'; 
+        snprintf(com.command, sizeof(com.command), "%s", token);
     }
 
     token = strtok(NULL, " ");
     if (token != NULL) {
-        strncpy(com.param, token, MAX_DIR_LEN - 1);
-        com.param[MAX_DIR_LEN - 1] = '\0'; 
-    } else {
-        com.param[0] = '\0';
+        snprintf(com.param, sizeof(com.param), "%s", token);
     }
+
+    printf("Command: %s\n", com.command);
+    printf("Parameter: %s\n", com.param);
+
 
 		printf("Sending - command: %s, param: %s\n", com.command, com.param);
 	
@@ -162,7 +164,6 @@ int main(int argc, char *argv[])
 		}
 		else if (strcmp(com.command, "ls") == 0){
 				File_info files_list[MAX_FILE_NUM];
-			printf("hit\n");
 
 			if ((read(sock, &num_file, sizeof(num_file))) > 0)
 			{
@@ -175,6 +176,8 @@ int main(int argc, char *argv[])
 			{
 				printf("%d : %s  | %d \n", i, files_list[i].file_name, files_list[i].size);
 			}
+		}else {
+			error_handling("Invalid input");
 		}
 	}
 	close(sock);
