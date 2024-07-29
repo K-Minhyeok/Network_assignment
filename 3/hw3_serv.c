@@ -339,11 +339,13 @@ void list_up(Client_info info)
 
 		if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
 		{
+			
 			continue;
+
 		}
 
 		strncpy(files_list[num_file].file_name, entry->d_name, sizeof(files_list[num_file].file_name) - 1);
-
+ 
 		unsigned int file_name_size = sizeof(files_list[num_file].file_name);
 		files_list[num_file].file_name[file_name_size - 1] = '\0';
 

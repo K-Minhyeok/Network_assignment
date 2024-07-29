@@ -149,13 +149,14 @@ int main(int argc, char *argv[])
 
 	// 2. client에서 write한 값을 read한다.
 
+
 	int write_cnt = 0;
 	while ((read_cnt = read(sock, message, BUF_SIZE)) != 0)
 	{											  // 버퍼가 비어있지 않다면
 		fwrite((void *)message, 1, read_cnt, fp); // 그 내용을 쓴다.
 		write_cnt += read_cnt;
 		if (write_cnt >= size)
-		{
+		{ 
 			break;
 		}
 	}
