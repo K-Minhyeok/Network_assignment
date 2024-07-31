@@ -4,9 +4,30 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-#include "hw_3.h"
 
+#define BUF_SIZE 1024
+#define MAX_DIR_LEN 256
+#define MAX_FILE_NUM 126
+#define MAX_CMD_LEN 3
 
+typedef struct Command
+{
+	char command[MAX_CMD_LEN]; // 어떤 명령을 하는지
+	char param[MAX_DIR_LEN];   // 명령에 대한 인자값
+} Command;
+
+typedef struct File_info
+{
+	char file_name[100];
+	unsigned int size;
+} File_info;
+
+typedef struct Content
+{
+	char message[BUF_SIZE];
+} Content;
+
+void error_handling(char *message);
 
 int main(int argc, char *argv[])
 {
@@ -15,7 +36,6 @@ int main(int argc, char *argv[])
 	char message[BUF_SIZE];
 	int str_len, recv_len, recv_cnt;
 	struct sockaddr_in serv_adr;
-	int num_file;
 	char com[BUF_SIZE];
 	char path_param[BUF_SIZE];
 
@@ -71,7 +91,11 @@ int main(int argc, char *argv[])
 
 		if (strcmp(com.command, "cd") == 0)
 		{
+			int result;
+			read(sock, &result, sizeof(result));
+
 			printf("moved\n");
+			printf("result : %d\n", result);
 		}
 		else if (strcmp(com.command, "u") == 0)
 		{
@@ -94,9 +118,10 @@ int main(int argc, char *argv[])
 			write(sock, &size, sizeof(size));
 
 			int read_cnt = 0;
-
-			while (1)
+			int total = 0;
+			while (read_cnt < size)
 			{
+
 				read_cnt = fread((void *)message, 1, BUF_SIZE, fp); // 버퍼에 fp가 가리키는 걸 읽어서 담는다. (저장할 곳 , 읽는 문자열 크기 , 반복 횟수 , 읽을 파일 포인터 )
 				if (read_cnt < BUF_SIZE)							// 버퍼 사이즈보다 읽은 게 적으면
 				{
@@ -104,8 +129,13 @@ int main(int argc, char *argv[])
 					break;
 				}
 				write(sock, message, BUF_SIZE); // 그게 아니면 버퍼 크기만큼만 적는다.
+				total += read_cnt;
 			}
 			fclose(fp);
+			int result;
+			read(sock, &result, sizeof(result));
+
+			printf("result : %d\n", result);
 		}
 
 		// 파일 다운로드
@@ -114,6 +144,9 @@ int main(int argc, char *argv[])
 			// 받는 처리
 			FILE *fp;
 			fp = fopen(com.param, "wb");
+			if (fp == NULL) {
+        error_handling("fp error");
+    }
 			char message[BUF_SIZE];
 			int read_cnt;
 			unsigned int size;
@@ -122,34 +155,69 @@ int main(int argc, char *argv[])
 
 			// 2. client에서 write한 값을 read한다.
 
-			int write_cnt = 0;
-			while ((read_cnt = read(sock, message, BUF_SIZE)) != 0)
-			{											  // 버퍼가 비어있지 않다면
-				fwrite((void *)message, 1, read_cnt, fp); // 그 내용을 쓴다.
-				write_cnt += read_cnt;
-				if (write_cnt >= size)
-				{
-					break;
+			int total = 0;
+			while (total < size)
+			{
+				if( size - total <BUF_SIZE){
+            	read_cnt = read(sock, message, size - total);
+				}else{
+				read_cnt = read(sock, message, BUF_SIZE);
+
 				}
+				if(read_cnt <=0)break;
+				fwrite((void *)message, 1, read_cnt, fp); // 그 내용을 쓴다.
+				
+				total += read_cnt;
 			}
 			puts("\nReceived file data");
 			fclose(fp);
+
+			int result;
+			read(sock, &result, sizeof(result));
+
+			printf("result : %d\n", result);
 		}
 		else if (strcmp(com.command, "ls") == 0)
 		{
 			File_info files_list[MAX_FILE_NUM];
+			int num_file;
 
-			if ((read(sock, &num_file, sizeof(num_file))) > 0)
+			if (read(sock, &num_file, sizeof(num_file)) > 0)
 			{
+
 				for (int i = 0; i < num_file; i++)
-					// while () //100M 읽을 예정인데, 10M 읽었을 때, 포인터를 그 다음으로 옮겨야 함
-					read(sock, &files_list[i], sizeof(File_info));
-			}
+				{
 
-			for (int i = 0; i < num_file; i++)
-			{
-				printf("%d : %s  | %d \n", i, files_list[i].file_name, files_list[i].size);
+					int ls_read_cnt = 0;
+
+					int total = 0;
+
+					while (total < sizeof(File_info))
+					{
+						ls_read_cnt = read(sock, ((char *)&files_list[i]) + total, sizeof(File_info) - total);
+						if (ls_read_cnt <= 0)
+						{
+							error_handling("read error");
+						}
+
+						total += ls_read_cnt;
+					}
+				}
+
+				for (int i = 0; i < num_file; i++)
+				{
+					printf("%d : %s | %d \n", i, files_list[i].file_name, files_list[i].size);
+				}
+
+				int result;
+				if (read(sock, &result, sizeof(result))<0)
+				{
+					error_handling("result error");
+				}
+					printf("result : %d\n", result);
+
 			}
+			
 		}
 		else
 		{
