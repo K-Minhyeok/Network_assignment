@@ -113,6 +113,7 @@ void change_dir(Client_info info, char param_in[MAX_DIR_LEN])
 {
     int sock = info.sockfd;
     printf("%d th clnt\n", sock);
+    printf("len %ld\n",strlen(param_in));
 
     File_info files_list[MAX_FILE_NUM];
     struct dirent *entry = NULL; // 현재 작업 주소에 있는 자료들
@@ -208,8 +209,13 @@ void change_dir(Client_info info, char param_in[MAX_DIR_LEN])
 
     // 4.해당 clnt의 구조체 업데이트
     strcpy(client[sock].last_dir, param_in);
+    int result =1;
 
-    printf("finished\n");
+int bytes_written = write(sock, &result, sizeof(result));
+if (bytes_written != sizeof(result))
+{
+    error_handling("Failed to write result to client");
+}    printf("finished\n");
 }
 
 void upload_file(Client_info info, char param_in[MAX_DIR_LEN])
@@ -424,8 +430,9 @@ void *handle_clnt(void *arg)
             return NULL;
         }
 
-        printf("Received - command: %s, param: %s\n", com.command, com.param);
+        printf("Received - command: %s : %ld, param: %s : %ld\n", com.command,strlen(com.command) ,com.param,strlen(com.param));
 
+        
         if (strcmp(com.command, "cd") == 0)
         {
             change_dir(client[clnt_sock], com.param);
