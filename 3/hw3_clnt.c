@@ -4,26 +4,9 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-
-#define BUF_SIZE 1024
-#define MAX_DIR_LEN 256
-#define MAX_FILE_NUM 126
-#define MAX_CMD_LEN 3
+#include "hw_3.h"
 
 
-typedef struct Command
-{
-	char command[MAX_CMD_LEN];	 // 어떤 명령을 하는지
-	char param[MAX_DIR_LEN]; // 명령에 대한 인자값
-} Command;
-
-typedef struct File_info
-{
-	char file_name[100];
-	unsigned int size;
-} File_info;
-
-void error_handling(char *message);
 
 int main(int argc, char *argv[])
 {
@@ -61,36 +44,27 @@ int main(int argc, char *argv[])
 	{
 		Command com;
 		char input[MAX_DIR_LEN];
-    com.command[0] = '\0';
-    com.param[0] = '\0';
-			fputs("==================\n", stdout);
+		com.command[0] = '\0';
+		com.param[0] = '\0';
+		fputs("==================\n", stdout);
 
-		fputs("Input message(Q to quit): ", stdout);
+		printf("Enter command and param: ");
+		if (scanf("%s %s", com.command, com.param) < 1)
+		{
+			error_handling("scanf() error");
+		}
 
-    printf("Enter command: ");
-	printf("Enter command: ");
-    if (fgets(input, sizeof(input), stdin) == NULL) {
-			error_handling("input error");
-    }
-    input[strcspn(input, "\n")] = '\0';
+		int c;
+		while ((c = getchar()) != '\n' && c != EOF)
+		{
+		}
 
-	char *token = strtok(input, " ");
-    if (token != NULL) {
-        snprintf(com.command, sizeof(com.command), "%s", token);
-    }
-
-    token = strtok(NULL, " ");
-    if (token != NULL) {
-        snprintf(com.param, sizeof(com.param), "%s", token);
-    }
-
-    printf("Command: %s\n", com.command);
-    printf("Parameter: %s\n", com.param);
-
+		printf("Command: %s\n", com.command);
+		printf("Parameter: %s\n", com.param);
 
 		printf("Sending - command: %s, param: %s\n", com.command, com.param);
-	
-		if (strcmp(com.command, "q\n") ==0|| strcmp(com.command, "Q\n")==0)
+
+		if (strcmp(com.command, "q\n") == 0 || strcmp(com.command, "Q\n") == 0)
 			break;
 
 		str_len = write(sock, &com, sizeof(com));
@@ -98,7 +72,6 @@ int main(int argc, char *argv[])
 		if (strcmp(com.command, "cd") == 0)
 		{
 			printf("moved\n");
-
 		}
 		else if (strcmp(com.command, "u") == 0)
 		{
@@ -118,7 +91,7 @@ int main(int argc, char *argv[])
 				error_handling("Wrong file Entered");
 			}
 
-			write(sock,&size,sizeof(size));
+			write(sock, &size, sizeof(size));
 
 			int read_cnt = 0;
 
@@ -140,31 +113,31 @@ int main(int argc, char *argv[])
 		{
 			// 받는 처리
 			FILE *fp;
-	fp = fopen(com.param, "wb");
-	char message[BUF_SIZE];
-	int read_cnt;
-	unsigned int size;
+			fp = fopen(com.param, "wb");
+			char message[BUF_SIZE];
+			int read_cnt;
+			unsigned int size;
 
-	read(sock, &size, sizeof(size));
+			read(sock, &size, sizeof(size));
 
-	// 2. client에서 write한 값을 read한다.
+			// 2. client에서 write한 값을 read한다.
 
-
-	int write_cnt = 0;
-	while ((read_cnt = read(sock, message, BUF_SIZE)) != 0)
-	{											  // 버퍼가 비어있지 않다면
-		fwrite((void *)message, 1, read_cnt, fp); // 그 내용을 쓴다.
-		write_cnt += read_cnt;
-		if (write_cnt >= size)
-		{ 
-			break;
+			int write_cnt = 0;
+			while ((read_cnt = read(sock, message, BUF_SIZE)) != 0)
+			{											  // 버퍼가 비어있지 않다면
+				fwrite((void *)message, 1, read_cnt, fp); // 그 내용을 쓴다.
+				write_cnt += read_cnt;
+				if (write_cnt >= size)
+				{
+					break;
+				}
+			}
+			puts("\nReceived file data");
+			fclose(fp);
 		}
-	}
-	puts("\nReceived file data");
-	fclose(fp);
-		}
-		else if (strcmp(com.command, "ls") == 0){
-				File_info files_list[MAX_FILE_NUM];
+		else if (strcmp(com.command, "ls") == 0)
+		{
+			File_info files_list[MAX_FILE_NUM];
 
 			if ((read(sock, &num_file, sizeof(num_file))) > 0)
 			{
@@ -177,7 +150,9 @@ int main(int argc, char *argv[])
 			{
 				printf("%d : %s  | %d \n", i, files_list[i].file_name, files_list[i].size);
 			}
-		}else {
+		}
+		else
+		{
 			error_handling("Invalid input");
 		}
 	}
