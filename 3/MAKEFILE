@@ -1,0 +1,17 @@
+hw3_serv: hw3_serv.o
+	gcc -o hw3 hw3_serv.o -lnsl
+
+hw3_clnt: hw3_clnt.o
+	gcc -o hw3_clnt hw3_clnt.o -lnsl
+
+hw3_serv.o: hw_3.h hw3_serv.c
+	gcc -c -o hw3_serv.o hw3_serv.c
+
+hw3_clnt.o: hw_3.h hw3_clnt.c
+	gcc -c -o hw3_clnt.o hw3_clnt.c
+
+hw_3.h: hw_3.x
+	rpcgen hw_3.x
+
+clean:
+	rm -f hw3_serv hw3_clnt *.o hw_3.h
