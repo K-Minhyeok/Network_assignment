@@ -17,8 +17,6 @@
 #define MAX_FILE_NUM 1024
 #define MAX_CMD_LEN 3
 
-
-
 int clnt_cnt = 0;
 int clnt_socks[MAX_CLNT];
 pthread_mutex_t mutx;
@@ -113,7 +111,7 @@ void change_dir(Client_info info, char param_in[MAX_DIR_LEN])
 {
     int sock = info.sockfd;
     printf("%d th clnt\n", sock);
-    printf("len %ld\n",strlen(param_in));
+    printf("len %ld\n", strlen(param_in));
 
     File_info files_list[MAX_FILE_NUM];
     struct dirent *entry = NULL; // 현재 작업 주소에 있는 자료들
@@ -209,13 +207,9 @@ void change_dir(Client_info info, char param_in[MAX_DIR_LEN])
 
     // 4.해당 clnt의 구조체 업데이트
     strcpy(client[sock].last_dir, param_in);
-    int result =1;
+    int result = 1;
 
-int bytes_written = write(sock, &result, sizeof(result));
-if (bytes_written != sizeof(result))
-{
-    error_handling("Failed to write result to client");
-}    printf("finished\n");
+    write(sock, &result, sizeof(result));
 }
 
 void upload_file(Client_info info, char param_in[MAX_DIR_LEN])
@@ -224,16 +218,16 @@ void upload_file(Client_info info, char param_in[MAX_DIR_LEN])
     int sock = info.sockfd;
 
     DIR *dp;
-    char tmp_dir[MAX_DIR_LEN+256];
+    char tmp_dir[MAX_DIR_LEN + 256];
     int param_len = strlen(param_in);
 
     strcpy(tmp_dir, client[sock].dir);
-	printf("hit 1\n");
+    printf("hit 1\n");
 
-	strncat(tmp_dir, param_in, param_len);
-	printf("hit 2\n");
-    printf("주소는 %s\n",tmp_dir);
-    
+    strncat(tmp_dir, param_in, param_len);
+    printf("hit 2\n");
+    printf("주소는 %s\n", tmp_dir);
+
     printf("hit 2\n");
 
     if ((dp = opendir(client[sock].dir)) == NULL)
@@ -260,26 +254,32 @@ void upload_file(Client_info info, char param_in[MAX_DIR_LEN])
         error_handling("Failed to read file size");
     }
 
-    printf("파일 크기는 %d\n",size);
+    printf("파일 크기는 %d\n", size);
 
     // 2. client에서 write한 값을 read한다.
 
-    int write_cnt = 0;
-	while ((read_cnt = read(sock, message, BUF_SIZE)) != 0)
-	{											 
-        printf("1반복\n"); // 버퍼가 비어있지 않다면
-		fwrite((void *)message, 1, read_cnt, fp); // 그 내용을 쓴다.
-		write_cnt += read_cnt;
-         printf("2반복\n");
-		if (write_cnt >= size)
-		{
-			break;
-		}
-	}
+    int total = 0;
+    while (total < size)
+    {
+
+        read_cnt = read(sock, message, BUF_SIZE);
+        printf("1반복\n");                        // 버퍼가 비어있지 않다면
+        fwrite((void *)message, 1, read_cnt, fp); // 그 내용을 쓴다.
+        printf("2반복\n");
+        if (total >= size)
+        {
+            break;
+        }
+        total += read_cnt;
+    }
     puts("\nReceived file data");
 
     fclose(fp);
     printf("finished\n");
+
+    int result = 1;
+
+    write(sock, &result, sizeof(result));
 }
 
 void download_file(Client_info info, char param_in[MAX_DIR_LEN])
@@ -294,16 +294,15 @@ void download_file(Client_info info, char param_in[MAX_DIR_LEN])
     char message[BUF_SIZE];
 
     DIR *dp;
-    char tmp_dir[MAX_DIR_LEN+256];
+    char tmp_dir[MAX_DIR_LEN + 256];
     int param_len = strlen(param_in);
 
     strcpy(tmp_dir, client[sock].dir);
-	printf("hit 1\n");
+    printf("hit 1\n");
 
-	strncat(tmp_dir, param_in, param_len);
-	printf("hit 2\n");
-    printf("주소는 %s\n",tmp_dir);
-    
+    strncat(tmp_dir, param_in, param_len);
+    printf("hit 2\n");
+    printf("주소는 %s\n", tmp_dir);
 
     fp = fopen(tmp_dir, "rb");
     if (fp == NULL)
@@ -318,21 +317,27 @@ void download_file(Client_info info, char param_in[MAX_DIR_LEN])
 
     write(sock, &size, sizeof(size));
 
-    int read_cnt = 0;
 
-    while (1)
+    int read_cnt = 0;
+    int total = 0;
+    while (read_cnt < size)
     {
-        read_cnt = fread((void *)message, 1, BUF_SIZE, fp); // 버퍼에 fp가 가리키는 걸 읽어서 담는다.
+
+        read_cnt = fread((void *)message, 1, BUF_SIZE, fp); // 버퍼에 fp가 가리키는 걸 읽어서 담는다. (저장할 곳 , 읽는 문자열 크기 , 반복 횟수 , 읽을 파일 포인터 )
         if (read_cnt < BUF_SIZE)                            // 버퍼 사이즈보다 읽은 게 적으면
         {
             write(sock, message, read_cnt); // 그냥 버퍼에 있는 거 쓰면 됨
             break;
         }
         write(sock, message, BUF_SIZE); // 그게 아니면 버퍼 크기만큼만 적는다.
+        total += read_cnt;
     }
     fclose(fp);
 
     // server : write , client : read
+
+    int result = 1;
+    write(sock, &result, sizeof(result));
 }
 
 void list_up(Client_info info)
@@ -370,20 +375,20 @@ void list_up(Client_info info)
         snprintf(full_path, sizeof(full_path), "%s/%s", client[sock].dir, entry->d_name);
 
         FILE *fp = fopen(full_path, "rb");
-        FILE *fp_tmp = fopen(full_path, "rb");
-
         if (fp == NULL)
         {
             files_list[num_file].size = 0;
         }
         else
         {
-            fseek(fp_tmp, 0, SEEK_END);
-            files_list[num_file].size = ftell(fp_tmp);
-            fclose(fp_tmp);
+            fseek(fp, 0, SEEK_END);
+            files_list[num_file].size = ftell(fp);
+            fclose(fp);
         }
 
         num_file++;
+        if (num_file >= MAX_FILE_NUM)
+            break;
     }
     closedir(dp);
 
@@ -393,6 +398,10 @@ void list_up(Client_info info)
         write(sock, &files_list[i], sizeof(File_info));
 
     printf("finished\n");
+
+    int result = 1;
+
+    write(sock, &result, sizeof(result));
 }
 void *handle_clnt(void *arg)
 {
@@ -430,9 +439,8 @@ void *handle_clnt(void *arg)
             return NULL;
         }
 
-        printf("Received - command: %s : %ld, param: %s : %ld\n", com.command,strlen(com.command) ,com.param,strlen(com.param));
+        printf("Received - command: %s : %ld, param: %s : %ld\n", com.command, strlen(com.command), com.param, strlen(com.param));
 
-        
         if (strcmp(com.command, "cd") == 0)
         {
             change_dir(client[clnt_sock], com.param);
