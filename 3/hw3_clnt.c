@@ -158,8 +158,12 @@ int main(int argc, char *argv[])
 			int total = 0;
 			while (total < size)
 			{
-
+				if( size - total <BUF_SIZE){
+            	read_cnt = read(sock, message, size - total);
+				}else{
 				read_cnt = read(sock, message, BUF_SIZE);
+
+				}
 				if(read_cnt <=0)break;
 				fwrite((void *)message, 1, read_cnt, fp); // 그 내용을 쓴다.
 				
