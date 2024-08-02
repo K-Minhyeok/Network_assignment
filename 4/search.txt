@@ -8,3 +8,8 @@ hungry:30000;
 pohang see:47000
 pohang fish:30000
 pohang restraunt:25000
+music cafe:4000
+music artist:15000
+pohang music:16000
+hello music:5000
+music is my life:600000

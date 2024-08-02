@@ -10,7 +10,7 @@
 #include <pthread.h>
 
 #define BUF_SIZE 100
-#define WORD_CNT 10
+#define WORD_CNT 15
 #define MAX_CLNT 256
 
 typedef struct Search_Record
@@ -212,16 +212,6 @@ void *handle_clnt(void *arg)
 
 			printf("Sent: %s , %d , size = ,pointer : %s\n", record_to_sort[i].word, record_to_sort[i].num_searched, record_to_sort[i].find);
 		}
-
-
-		int result;
-		int tmp = read(clnt_sock, &result, sizeof(int));
-		if (tmp < 0)
-		{
-			error_handling("read result error");
-		}
-
-		printf("result : %d\n", result);
 	}
 		// 클라이언트 연결 종료 후 처리
 		pthread_mutex_lock(&mutx);
