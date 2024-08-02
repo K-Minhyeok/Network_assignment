@@ -1,0 +1,10 @@
+pohang:50000
+pohang cafe:14000
+pohang pizza:10000
+pizza:70000
+pohang minhyeok:3
+pohang hang:600
+hungry:30000;
+pohang see:47000
+pohang fish:30000
+pohang restraunt:25000
