@@ -73,17 +73,18 @@ int main(int argc, char *argv[])
 		puts("Connected...........");
 	Input input;
 	input.message[0] = '\0';
+	printf("\033[s");
 
 	while (1)
 	{
 
-		printf("\033[s");
-
 		printf("Enter a word (ESC to quit): ");
+
 		// 입력 받기
 		// 문자를 입력받았다면 문자열에 추가
 		// escape 코드를 쳤으면 break ( esc로 )
 		// backspace 를 쳤다면 현재 인덱스를 /0 로 바꾼다.
+
 		ch = getchar();
 
 		if (ch == 27)
@@ -115,7 +116,7 @@ int main(int argc, char *argv[])
 		}
 
 		Search_Record record_to_receive[num_result];
-
+		printf("\n");
 		// 입력한 문자에 대한 결과를 받아온다.
 		for (int i = 0; i < num_result; i++)
 		{

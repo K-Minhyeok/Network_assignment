@@ -35,6 +35,7 @@ int compare(const void *a, const void *b);
 
 int clnt_cnt = 0;
 int clnt_socks[MAX_CLNT];
+char filename[BUF_SIZE];
 pthread_mutex_t mutx;
 fd_set reads, cpy_reads;
 
@@ -47,10 +48,11 @@ int main(int argc, char *argv[])
 	socklen_t adr_sz;
 	int fd_max, str_len, fd_num, i;
 	char buf[BUF_SIZE];
+	strcpy(filename, argv[2]);
 
-	if (argc != 2)
+	if (argc != 3)
 	{
-		printf("Usage : %s <port>\n", argv[0]);
+		printf("Usage : %s <port> <filename>\n", argv[0]);
 		exit(1);
 	}
 
@@ -166,7 +168,7 @@ void *handle_clnt(void *arg)
 
 		// 파일 parsing 함수 (입력 : 텍스트 파일이름 string)
 		// 결과는 구조체에 담긴다.
-		parse_textfile("search.txt", search_record);
+		parse_textfile(filename, search_record);
 
 		for (int i = 0; i < WORD_CNT; i++)
 		{
