@@ -1,0 +1,5 @@
+hw4_serv: hw4_serv.o
+	gcc -c hw3 hw3_serv.c -lnsl
+
+hw4_clnt: hw4_clnt.o
+	gcc -c hw3_clnt hw3_clnt.c -lnsl

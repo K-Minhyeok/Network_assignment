@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <termios.h>
 
+
 #define BUF_SIZE 100
 #define MAX_CMD_LEN 3
 
@@ -16,7 +17,6 @@ typedef struct Search_Record
 {
 	char word[BUF_SIZE];
 	int num_searched;
-	char *find;
 } Search_Record;
 
 typedef struct Input
@@ -28,7 +28,6 @@ typedef struct Input
 void error_handling(char *message);
 void set_terminal_mode(int enable);
 void show_with_color(char word_to_color[], char input[]);
-char *get_input();
 
 int main(int argc, char *argv[])
 {
@@ -43,6 +42,8 @@ int main(int argc, char *argv[])
 	int result = 1;
 	int tmp;
 	int ch;
+	Input input;
+
 
 	struct termios new_termio, old_termio; // Termios 설정
 	tcgetattr(STDIN_FILENO, &old_termio);  //
@@ -71,19 +72,19 @@ int main(int argc, char *argv[])
 
 	else
 		puts("Connected...........");
-	Input input;
 	input.message[0] = '\0';
+	printf("\033[s");
 
 	while (1)
 	{
 
-		printf("\033[s");
-
 		printf("Enter a word (ESC to quit): ");
+
 		// 입력 받기
 		// 문자를 입력받았다면 문자열에 추가
 		// escape 코드를 쳤으면 break ( esc로 )
 		// backspace 를 쳤다면 현재 인덱스를 /0 로 바꾼다.
+
 		ch = getchar();
 
 		if (ch == 27)
@@ -115,7 +116,7 @@ int main(int argc, char *argv[])
 		}
 
 		Search_Record record_to_receive[num_result];
-
+		printf("\n");
 		// 입력한 문자에 대한 결과를 받아온다.
 		for (int i = 0; i < num_result; i++)
 		{
