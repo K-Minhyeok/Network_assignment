@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <termios.h>
 
+
 #define BUF_SIZE 100
 #define MAX_CMD_LEN 3
 
@@ -16,7 +17,6 @@ typedef struct Search_Record
 {
 	char word[BUF_SIZE];
 	int num_searched;
-	char *find;
 } Search_Record;
 
 typedef struct Input
@@ -28,7 +28,6 @@ typedef struct Input
 void error_handling(char *message);
 void set_terminal_mode(int enable);
 void show_with_color(char word_to_color[], char input[]);
-char *get_input();
 
 int main(int argc, char *argv[])
 {
@@ -43,6 +42,8 @@ int main(int argc, char *argv[])
 	int result = 1;
 	int tmp;
 	int ch;
+	Input input;
+
 
 	struct termios new_termio, old_termio; // Termios 설정
 	tcgetattr(STDIN_FILENO, &old_termio);  //
@@ -71,7 +72,6 @@ int main(int argc, char *argv[])
 
 	else
 		puts("Connected...........");
-	Input input;
 	input.message[0] = '\0';
 	printf("\033[s");
 
