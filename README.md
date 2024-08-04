@@ -13,4 +13,6 @@
 
 <hr>
 
- # 🤦🏻 Final Project <hr>
+ # 🤦🏻 Final Project <br>
+ - 컴파일 방법 : make hw5
+<hr>
