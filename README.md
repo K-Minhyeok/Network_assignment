@@ -15,4 +15,9 @@
 
  # 🤦🏻 Final Project <br>
  - 컴파일 방법 : make hw5
+<h2>진행 상황</h2> <br>
+<li>✅Sender ➡️ Receiver : Segment와 모든 Receiver 정보 </li>
+<li>🤦🏻Receiver ➡️ Receiver (Send) </li>
+<li>🤦🏻Receiver ➡️ Receiver (Receive) </li>
+
 <hr>
