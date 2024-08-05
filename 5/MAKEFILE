@@ -1,2 +1,2 @@
 hw5: hw5.o
-	gcc -c hw5 hw5.c 
+	gcc -c hw5 hw5.c  -lnsl
