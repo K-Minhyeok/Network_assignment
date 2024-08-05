@@ -10,12 +10,6 @@
 #define BUF_SIZE 60
 #define MAX_CLNT 10
 
-int clnt_cnt = 0; // 전체 유저 수
-int clnt_socks[MAX_CLNT];
-pthread_mutex_t mutx;
-fd_set reads, cpy_reads;
-
-
 typedef struct Sender_Input
 {
     int recv_max;
@@ -45,9 +39,14 @@ typedef struct Receiver_Info
 } Receiver_Info;
 
 void error_handling(char *msg);
-void sender_send(Sender_Input input, Receiver_Info info[]);
+void sender_send(Sender_Input input);
 void *receiver_receive(void *arg);
 void *receiver_send(void *arg);
 
+int clnt_cnt = 0; // 전체 유저 수
+int clnt_socks[MAX_CLNT];
+pthread_mutex_t mutx;
+fd_set reads, cpy_reads;
+Receiver_Info *receivers_info;
 
 #endif
