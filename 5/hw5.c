@@ -274,9 +274,8 @@ int main(int argc, char *argv[])
         pthread_create(&t_receive, NULL, receiver_receive, (void *)&id);
         pthread_join(t_send, NULL);
         pthread_join(t_receive, NULL);
-        while (1)
-        {
-        }
+        
+        printf("끝\n");
         close(serv_sock);
         return 0;
     }
@@ -372,13 +371,18 @@ void *receiver_send(void *arg)
     struct sockaddr_in serv_adr;
     int sock;
     int num_to_send = receivers_info[id].num_from_sender;
+    int total_num = receivers_info[id].total_from_sender;
     int count = 0; // segment 찾는 용도
     int sock_idx = 0;
     Segment to_send[num_to_send];
+    printf("rs: %d개 보냅니다.  \n", num_to_send);
+    printf("rs: 전체는 %d개  \n", total_num);
+
+
 
     // final 에서 is_from_sender =1 인거 골라서 to_send에 담기
     // is from sender 0 으로 바꿔서 보내기
-    for (int k = 0; k < sizeof(final_segment); k++)
+    for (int k = 0; k < total_num; k++)
     {
         if (final_segment[k].to == id && count < num_to_send && final_segment[k].is_from_sender == 1)
         {
@@ -420,6 +424,7 @@ void *receiver_receive(void *arg)
     int from_sock;
     while (1)
     {
+        if(count == clnt_cnt-1) break;
         from_sock = receiver_socks[count];
         if (from_sock <= 0)
         {
@@ -527,6 +532,7 @@ void sender_send(Sender_Input input)
     for (int i = 0; i < input.recv_max; i++)
     {
         printf("%d번째 유저 : %d 개 갖고 있음 , port : %d\n", receivers_info[i].nth_receiver, receivers_info[i].num_from_sender, receivers_info[i].port);
+        receivers_info[i].total_from_sender = total_seg;
     }
 
     printf("seg 는 %d개 입니다", total_seg);
