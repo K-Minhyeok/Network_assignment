@@ -21,6 +21,7 @@ typedef struct Sender_Input
 typedef struct Segment
 {
     long total_size;          // 공통
+    int total_num;            // 공통
     char file_name[BUF_SIZE]; // 공통
     long seg_size;            // 마지막 하나가 다르기 때문에 공통이 아님. = 이걸로 마지막 seg 판단
     char *buf;
@@ -42,11 +43,19 @@ void error_handling(char *msg);
 void sender_send(Sender_Input input);
 void *receiver_receive(void *arg);
 void *receiver_send(void *arg);
+void *receiver_accept(void *arg);
+void *receiver_conn(void *arg);
 
 int clnt_cnt = 0; // 전체 유저 수
 int clnt_socks[MAX_CLNT];
 pthread_mutex_t mutx;
 fd_set reads, cpy_reads;
 Receiver_Info *receivers_info;
+Segment *final_segment;
+int receiver_socks[MAX_CLNT-1];
+int listen_sock ;
+int count_for_sock = 0;
+
+
 
 #endif
