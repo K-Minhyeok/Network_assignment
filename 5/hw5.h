@@ -34,6 +34,7 @@ typedef struct Receiver_Info
 {
     int nth_receiver;
     int num_from_sender;
+    int total_from_sender;
     in_port_t port; // 해당 receiver의 port번호
     in_addr_t addr; // 해당 receiver의 address
 
