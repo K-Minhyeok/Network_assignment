@@ -274,9 +274,8 @@ int main(int argc, char *argv[])
         pthread_create(&t_receive, NULL, receiver_receive, (void *)&id);
         pthread_join(t_send, NULL);
         pthread_join(t_receive, NULL);
-        while (1)
-        {
-        }
+        
+        printf("끝\n");
         close(serv_sock);
         return 0;
     }
@@ -420,6 +419,7 @@ void *receiver_receive(void *arg)
     int from_sock;
     while (1)
     {
+        if(count == clnt_cnt-1) break;
         from_sock = receiver_socks[count];
         if (from_sock <= 0)
         {
