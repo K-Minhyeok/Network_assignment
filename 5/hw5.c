@@ -252,17 +252,26 @@ int main(int argc, char *argv[])
         int tmp_rd_cnt;
         while (idx < to_get)
         {
-            tmp_segment[idx].buf = (char *)malloc(size_per_seg); // 메모리 할당
 
-            if ((tmp_rd_cnt = read(sock, &tmp_segment[idx], sizeof(Segment))) <= 0)
+            if ((tmp_rd_cnt = read(sock, &tmp_segment[idx], sizeof(Segment) - sizeof(char *))) <= 0)
             {
                 error_handling("read seg error");
             }
+            tmp_segment[idx].buf = (char *)malloc(tmp_segment[idx].seg_size);                        // 메모리 할당
+            final_segment[tmp_segment[idx].nth_seg].buf = (char *)malloc(tmp_segment[idx].seg_size); // 메모리 할당
+
+            if (read(sock, tmp_segment[idx].buf, tmp_segment[idx].seg_size) <= 0)
+            {
+                error_handling("read buffer error");
+            }
+
             else
             {
-                printf("%d 번 seg 받음\n", tmp_segment[idx].nth_seg);
-
+                tmp_segment[idx].is_from_sender = 1;
                 final_segment[tmp_segment[idx].nth_seg] = tmp_segment[idx];
+                memcpy(&final_segment[tmp_segment[idx].nth_seg].buf, &tmp_segment[idx].buf, sizeof(tmp_segment[idx].buf));
+                printf("%d 번 seg 받음\n", final_segment[tmp_segment[idx].nth_seg].nth_seg);
+
                 idx++;
             }
         }
@@ -274,8 +283,13 @@ int main(int argc, char *argv[])
         pthread_create(&t_receive, NULL, receiver_receive, (void *)&id);
         pthread_join(t_send, NULL);
         pthread_join(t_receive, NULL);
-        
-        printf("끝\n");
+
+        printf("끝=============================\n");
+
+        for(int i=0; i<num_seg;i++){
+            printf("%s",final_segment[i].buf);
+        }
+
         close(serv_sock);
         return 0;
     }
@@ -378,8 +392,6 @@ void *receiver_send(void *arg)
     printf("rs: %d개 보냅니다.  \n", num_to_send);
     printf("rs: 전체는 %d개  \n", total_num);
 
-
-
     // final 에서 is_from_sender =1 인거 골라서 to_send에 담기
     // is from sender 0 으로 바꿔서 보내기
     for (int k = 0; k < total_num; k++)
@@ -409,7 +421,11 @@ void *receiver_send(void *arg)
         {
             if (write(sock, &to_send[j], sizeof(Segment)) <= 0)
                 error_handling("rs : write() error");
+        
+            if (write(sock, to_send[j].buf, to_send[j].seg_size) <= 0)
+                error_handling("rs : write() error");
         }
+
     }
 
     return NULL;
@@ -424,7 +440,8 @@ void *receiver_receive(void *arg)
     int from_sock;
     while (1)
     {
-        if(count == clnt_cnt-1) break;
+        if (count == clnt_cnt - 1)
+            break;
         from_sock = receiver_socks[count];
         if (from_sock <= 0)
         {
@@ -445,11 +462,21 @@ void *receiver_receive(void *arg)
             {
                 error_handling("rr : receive segment error");
             }
+
+            received_segment.buf = (char *)malloc(received_segment.seg_size);
+            if (read(from_sock, received_segment.buf, received_segment.seg_size) <= 0)
+            {
+                error_handling("rr : receive segment error");
+            }
             else
             {
                 // 받은 거 final seg의 올바른 index로 넣기
+                memcpy(&final_segment[received_segment.nth_seg].buf,&received_segment.buf , sizeof(received_segment.buf));
                 final_segment[received_segment.nth_seg] = received_segment;
+
                 printf("rr : =====%d th seg 받음 from receiver %d\n", received_segment.nth_seg, received_segment.to);
+                printf("rr : =====%s\n", received_segment.buf);
+
             }
         }
         count++;
@@ -561,9 +588,9 @@ void sender_send(Sender_Input input)
 
     segment.total_size = total;
     strcpy(segment.file_name, input.file_name);
-    segment.is_from_sender = 1;
     segment.total_num = total_seg;
     int wrt_cnt;
+    int wrt_buf;
     while (seg_cnt < total_seg)
     {
         segment.nth_seg = seg_cnt;
@@ -575,10 +602,14 @@ void sender_send(Sender_Input input)
         }
         segment.seg_size = read_cnt;
 
-        if ((wrt_cnt = write(clnt_socks[id_receiver], &segment, sizeof(Segment))) <= 0)
+        if ((wrt_cnt = write(clnt_socks[id_receiver], &segment, sizeof(Segment) - sizeof(char *))) <= 0)
             error_handling("write error");
 
-        printf("cnt : %d, to: %d , 보낸 크기 : %d\n", seg_cnt, clnt_socks[id_receiver], wrt_cnt);
+        // 그 다음 버퍼의 내용을 전송
+        if ((wrt_buf = write(clnt_socks[id_receiver], segment.buf, segment.seg_size)) <= 0)
+            error_handling("write buffer error");
+
+        printf("cnt : %d, to: %d , 보낸 크기 : %d, wrtbuf : %d \n", seg_cnt, clnt_socks[id_receiver], wrt_cnt, wrt_buf);
 
         id_receiver = (id_receiver + 1) % input.recv_max;
         seg_cnt++;
