@@ -19,6 +19,7 @@
 <li>✅Sender ➡️ Receiver : Segment와 모든 Receiver 정보 </li>
 <li>✅Receiver ➡️ Receiver (Send) </li>
 <li>✅Receiver ➡️ Receiver (Receive) </li>
-<li> 🤦🏻 Segment 내용 검사 </li>
+<li> ✅� Segment 내용 검사 </li>
+<li> 🤦🏻 프로그레스 바 </li>
 
 <hr>
