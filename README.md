@@ -11,15 +11,27 @@
 - make hw4_serv : server 코드 컴파일<br>
 - make hw4_clnt : clnt 코드 컴파일
 
+
 <hr>
 
- # 🤦🏻 Final Project <br>
+ # 🤦✅ Final Project <br>
  - 컴파일 방법 : make hw5
 <h2>진행 상황</h2> <br>
 <li>✅Sender ➡️ Receiver : Segment와 모든 Receiver 정보 </li>
 <li>✅Receiver ➡️ Receiver (Send) </li>
 <li>✅Receiver ➡️ Receiver (Receive) </li>
-<li> ✅� Segment 내용 검사 </li>
-<li> 🤦🏻 프로그레스 바 </li>
+<li> ✅ Segment 내용 검사 </li>
+
+실행 예시 : sender <br>
+./hw5 -s -n 3 -f a.txt -g 20 -p 33953 <br>
+
+실행 예시 : receiver <br>
+
+./hw5 -r -a 192.168.10.2  33953 -p 22222 <br>
+./hw5 -r -a 192.168.10.2  33953 -p 22224 <br>
+./hw5 -r -a 192.168.10.2  33953 -p 22226 <br>
+
+
+
 
 <hr>
