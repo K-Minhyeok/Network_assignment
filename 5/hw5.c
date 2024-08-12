@@ -167,6 +167,7 @@ int main(int argc, char *argv[])
         int receiver_cnt;
         int id;
         int size_per_seg;
+        FILE *fp;
         Receiver_Info receiver_to_update;
         pthread_t t_conn, t_accept;
 
@@ -286,9 +287,22 @@ int main(int argc, char *argv[])
 
         printf("끝=============================\n");
 
-        for(int i=0; i<num_seg;i++){
-            printf("%s",final_segment[i].buf);
+        // for(int i=0; i<num_seg;i++){
+        //     printf("%s",final_segment[i].buf);
+        // }
+
+         fp = fopen(final_segment[0].file_name,"wb");
+        if(fp ==NULL){
+            error_handling("fp error");
         }
+        
+        for(int i=0; i<num_seg;i++){
+            printf("%d\n",i);
+            fwrite(final_segment[i].buf, 1, final_segment[i].seg_size, fp);
+            
+        }
+
+
 
         close(serv_sock);
         return 0;
@@ -466,7 +480,7 @@ void *receiver_receive(void *arg)
             received_segment.buf = (char *)malloc(received_segment.seg_size);
             if (read(from_sock, received_segment.buf, received_segment.seg_size) <= 0)
             {
-                error_handling("rr : receive segment error");
+                error_handling("rr : receive buf error");
             }
             else
             {
