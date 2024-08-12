@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
         // sender 한테 전체 seg의 갯수 , 몇 명의 유저 , (자신이 보낸 것 포함)모든 유저의 정보 , seg 정보를 받는다.
         // id 값을 통해 유저 정보들 안에서 자신이 받아야 하는 seg의 갯수를 구한다.
         // 받아야 하는 seg를 받는다.
-
+        // receiver 본인의 socket을 listen으로 열어둔다.
         // 다른 receiver들한테 보내는 thread
         // 다른 receiver들한테 받는 thread
 
@@ -194,10 +194,8 @@ int main(int argc, char *argv[])
         read(sock, &receiver_cnt, sizeof(receiver_cnt));
 
         clnt_cnt = receiver_cnt;
-        // 각 receiver가 server에 port 를 알려줘야 함
-        // 주소도
+        // 각 receiver가 server에 port랑 addr를 알려줘야 함
         receiver_to_update.port = (atoi(argv[6]));
-        // receiver_to_update.addr = 34252992;
         receiver_to_update.nth_receiver = id;
         write(sock, &receiver_to_update, sizeof(receiver_to_update));
 
@@ -235,10 +233,9 @@ int main(int argc, char *argv[])
             error_handling("listen() error");
 
         // 연결 connection thread;
+        // 연결 accept thread
         pthread_create(&t_conn, NULL, receiver_conn, (void *)&id);
-        // 연결 accept thread;
         pthread_create(&t_accept, NULL, receiver_accept, (void *)&id);
-
         pthread_join(t_conn, NULL);
         pthread_join(t_accept, NULL);
 
@@ -247,8 +244,8 @@ int main(int argc, char *argv[])
         // id 값을 통해 유저 정보들 안에서 자신이 받아야 하는 seg의 갯수를 구한다.
         int to_get = receivers_info[id].num_from_sender;
         Segment tmp_segment[num_seg];
-
         memset(&tmp_segment, 0, sizeof(Segment));
+
         // 받아야 하는 seg를 받는다.
         int tmp_rd_cnt;
         while (idx < to_get)
@@ -258,8 +255,8 @@ int main(int argc, char *argv[])
             {
                 error_handling("read seg error");
             }
-            tmp_segment[idx].buf = (char *)malloc(tmp_segment[idx].seg_size);                        // 메모리 할당
-            final_segment[tmp_segment[idx].nth_seg].buf = (char *)malloc(tmp_segment[idx].seg_size); // 메모리 할당
+            tmp_segment[idx].buf = (char *)malloc(tmp_segment[idx].seg_size);                        
+            final_segment[tmp_segment[idx].nth_seg].buf = (char *)malloc(tmp_segment[idx].seg_size);
 
             if (read(sock, tmp_segment[idx].buf, tmp_segment[idx].seg_size) <= 0)
             {
@@ -272,7 +269,6 @@ int main(int argc, char *argv[])
                 final_segment[tmp_segment[idx].nth_seg] = tmp_segment[idx];
                 memcpy(&final_segment[tmp_segment[idx].nth_seg].buf, &tmp_segment[idx].buf, sizeof(tmp_segment[idx].buf));
                 printf("%d 번 seg 받음\n", final_segment[tmp_segment[idx].nth_seg].nth_seg);
-
                 idx++;
             }
         }
@@ -287,27 +283,25 @@ int main(int argc, char *argv[])
 
         printf("끝=============================\n");
 
-        // for(int i=0; i<num_seg;i++){
-        //     printf("%s",final_segment[i].buf);
-        // }
-
-         fp = fopen(final_segment[0].file_name,"wb");
-        if(fp ==NULL){
+        fp = fopen(final_segment[0].file_name, "wb");
+        if (fp == NULL)
+        {
             error_handling("fp error");
         }
-        
-        for(int i=0; i<num_seg;i++){
-            printf("%d\n",i);
+
+        for (int i = 0; i < num_seg; i++)
+        {
+            printf("%d\n", i);
             fwrite(final_segment[i].buf, 1, final_segment[i].seg_size, fp);
-            
         }
-
-
 
         close(serv_sock);
         return 0;
     }
 }
+
+//다른 receiver들이 열어둔 socket에 연결한다.
+//1. 나보다 id num이 큰 애들한테만 신청을 한다.
 void *receiver_conn(void *arg)
 {
     printf("recv conn\n");
@@ -347,9 +341,9 @@ void *receiver_conn(void *arg)
     return NULL;
 }
 
-// receiving peer가 다른 receiver peer로 부터  받는 함수
-// 1. 연결한다.
-// 2. accept 오는 게 있으면 받고 그 sock으로 오는 segment를 받는다.
+// 다른 receiver가 보낸 연결 요청 받기
+// 1. 해당 receiver가 listen해둔 socket으로 연결 요청이 들어오면
+// 2. 해당 요청 accept하고 socket번호 저장
 void *receiver_accept(void *arg)
 {
     int id = *((int *)arg);
@@ -387,11 +381,13 @@ void *receiver_accept(void *arg)
 }
 
 // receiving peer 가 다른 receiving peer에게 보내는 함수
-
 // 연결 관련 init
 // receiver 수만큼 반복 (**본인 제외) {
-// segment.from_sender==1 인 것만 골라서
+// 몇 개를 받아야 하는지 보낸다.
+//  =======  보낼 수만큼 반복 ======
+// segment.from_sender==1 && 자신이 sender에게 받은 것만 골라서
 // segment.from_sender =0 으로 바꿔서 보낸다.
+// segment.buf 도 따로 한 번 다시 보내준다.
 // }
 void *receiver_send(void *arg)
 {
@@ -435,16 +431,24 @@ void *receiver_send(void *arg)
         {
             if (write(sock, &to_send[j], sizeof(Segment)) <= 0)
                 error_handling("rs : write() error");
-        
+
             if (write(sock, to_send[j].buf, to_send[j].seg_size) <= 0)
                 error_handling("rs : write() error");
         }
-
     }
 
     return NULL;
 }
 
+
+// 연결 관련 init
+// receiver 수만큼 반복 (**본인 제외) {
+// 몇 개를 받아야 하는지 읽는다.
+// ======= 받아야 하는 수만큼 반복한다 =====
+// segment를 읽는다.
+// segment.buf 도 따로 한 번 다시 읽는다.
+// 이렇게 읽은 걸 최종적으로 segment를 담아두는 곳에 nth_seg에 맞게 담는다.
+// }
 void *receiver_receive(void *arg)
 {
     int id = *((int *)arg);
@@ -485,12 +489,11 @@ void *receiver_receive(void *arg)
             else
             {
                 // 받은 거 final seg의 올바른 index로 넣기
-                memcpy(&final_segment[received_segment.nth_seg].buf,&received_segment.buf , sizeof(received_segment.buf));
+                memcpy(&final_segment[received_segment.nth_seg].buf, &received_segment.buf, sizeof(received_segment.buf));
                 final_segment[received_segment.nth_seg] = received_segment;
 
                 printf("rr : =====%d th seg 받음 from receiver %d\n", received_segment.nth_seg, received_segment.to);
                 printf("rr : =====%s\n", received_segment.buf);
-
             }
         }
         count++;
